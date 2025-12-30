@@ -269,12 +269,12 @@ async def get_trading_decisions():
                     logger.info(f"Looking for individual agent predictions for {len(symbols_without_ensemble)} symbols: {symbols_without_ensemble}")
                     agent_placeholders = ','.join([f"'{symbol}'" for symbol in symbols_without_ensemble])
                     agent_result = await conn.fetch(f"""
-                        SELECT DISTINCT ON (symbol) 
-                            symbol, signal_type, confidence, reasoning, agent_name, timestamp
-                        FROM agent_signals 
-                        WHERE timestamp >= NOW() - INTERVAL '2 hours'
+                        SELECT DISTINCT ON (symbol)
+                            symbol, signal_type, confidence, reasoning, agent_name, created_at as timestamp
+                        FROM agent_signals
+                        WHERE created_at >= NOW() - INTERVAL '2 hours'
                         AND symbol IN ({agent_placeholders})
-                        ORDER BY symbol, timestamp DESC
+                        ORDER BY symbol, created_at DESC
                     """)
                     
                     if agent_result:
