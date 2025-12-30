@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ModalService } from '../../shared/modal/modal.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-reports',
@@ -187,7 +188,7 @@ export class ReportsComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.http.get<any>('http://localhost:8001/reports/summary').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/reports/summary`).subscribe({
       next: (summary) => {
         this.systemSummary = summary;
         this.loading = false;
@@ -207,13 +208,13 @@ export class ReportsComponent implements OnInit {
     let endpoint = '';
     switch (reportType) {
       case 'daily':
-        endpoint = 'http://localhost:8001/reports/daily';
+        endpoint = `${environment.apiUrl}/reports/daily`;
         break;
       case 'weekly':
-        endpoint = 'http://localhost:8001/reports/weekly';
+        endpoint = `${environment.apiUrl}/reports/weekly`;
         break;
       case 'agent-performance':
-        endpoint = 'http://localhost:8001/reports/agent-performance';
+        endpoint = `${environment.apiUrl}/reports/agent-performance`;
         break;
       default:
         this.generating = false;
@@ -246,7 +247,7 @@ export class ReportsComponent implements OnInit {
       tone: 'professional'
     };
 
-    this.http.post<any>('http://localhost:8001/reports/explain', requestData).subscribe({
+    this.http.post<any>(`${environment.apiUrl}/reports/explain`, requestData).subscribe({
       next: (explanation) => {
         this.explanationResult = explanation;
         this.explaining = false;

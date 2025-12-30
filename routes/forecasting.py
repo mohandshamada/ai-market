@@ -463,26 +463,26 @@ async def get_day_forecast_summary():
             async with dependencies.db_pool.acquire() as conn:
                 # Get forecast summary from agent_signals for day forecasts
                 summary = await conn.fetchrow("""
-                    SELECT 
+                    SELECT
                         COUNT(*) as total_forecasts,
                         COUNT(CASE WHEN signal_type = 'buy' THEN 1 END) as buy_signals,
                         COUNT(CASE WHEN signal_type = 'sell' THEN 1 END) as sell_signals,
                         COUNT(CASE WHEN signal_type = 'hold' THEN 1 END) as hold_signals,
                         AVG(confidence) as avg_confidence,
                         COUNT(DISTINCT symbol) as symbols_covered
-                    FROM agent_signals 
-                    WHERE agent_name = 'ForecastAgent' 
-                    AND timestamp >= NOW() - INTERVAL '1 hour'
+                    FROM agent_signals
+                    WHERE agent_name = 'ForecastAgent'
+                    AND created_at >= NOW() - INTERVAL '1 hour'
                 """)
                 
                 if summary and summary['total_forecasts'] > 0:
                     # Get recent day forecasts
                     recent_forecasts = await conn.fetch("""
-                        SELECT symbol, signal_type, confidence, reasoning, timestamp
-                        FROM agent_signals 
-                        WHERE agent_name = 'ForecastAgent' 
-                        AND timestamp >= NOW() - INTERVAL '1 hour'
-                        ORDER BY timestamp DESC 
+                        SELECT symbol, signal_type, confidence, reasoning, created_at
+                        FROM agent_signals
+                        WHERE agent_name = 'ForecastAgent'
+                        AND created_at >= NOW() - INTERVAL '1 hour'
+                        ORDER BY created_at DESC
                         LIMIT 5
                     """)
                     
@@ -496,7 +496,7 @@ async def get_day_forecast_summary():
                             "direction": forecast['signal_type'],
                             "signal_strength": "strong" if forecast['confidence'] > 0.8 else "moderate" if forecast['confidence'] > 0.6 else "weak",
                             "reasoning": forecast['reasoning'],
-                            "created_at": forecast['timestamp'].isoformat()
+                            "created_at": forecast['created_at'].isoformat()
                         })
                     
                     return {
@@ -546,26 +546,26 @@ async def get_swing_forecast_summary():
             async with dependencies.db_pool.acquire() as conn:
                 # Get forecast summary from agent_signals for swing forecasts
                 summary = await conn.fetchrow("""
-                    SELECT 
+                    SELECT
                         COUNT(*) as total_forecasts,
                         COUNT(CASE WHEN signal_type = 'buy' THEN 1 END) as buy_signals,
                         COUNT(CASE WHEN signal_type = 'sell' THEN 1 END) as sell_signals,
                         COUNT(CASE WHEN signal_type = 'hold' THEN 1 END) as hold_signals,
                         AVG(confidence) as avg_confidence,
                         COUNT(DISTINCT symbol) as symbols_covered
-                    FROM agent_signals 
-                    WHERE agent_name = 'StrategyAgent' 
-                    AND timestamp >= NOW() - INTERVAL '1 hour'
+                    FROM agent_signals
+                    WHERE agent_name = 'StrategyAgent'
+                    AND created_at >= NOW() - INTERVAL '1 hour'
                 """)
                 
                 if summary and summary['total_forecasts'] > 0:
                     # Get recent swing forecasts
                     recent_forecasts = await conn.fetch("""
-                        SELECT symbol, signal_type, confidence, reasoning, timestamp
-                        FROM agent_signals 
-                        WHERE agent_name = 'StrategyAgent' 
-                        AND timestamp >= NOW() - INTERVAL '1 hour'
-                        ORDER BY timestamp DESC 
+                        SELECT symbol, signal_type, confidence, reasoning, created_at
+                        FROM agent_signals
+                        WHERE agent_name = 'StrategyAgent'
+                        AND created_at >= NOW() - INTERVAL '1 hour'
+                        ORDER BY created_at DESC
                         LIMIT 5
                     """)
                     
@@ -579,7 +579,7 @@ async def get_swing_forecast_summary():
                             "direction": forecast['signal_type'],
                             "signal_strength": "strong" if forecast['confidence'] > 0.8 else "moderate" if forecast['confidence'] > 0.6 else "weak",
                             "reasoning": forecast['reasoning'],
-                            "created_at": forecast['timestamp'].isoformat()
+                            "created_at": forecast['created_at'].isoformat()
                         })
                     
                     return {
@@ -728,12 +728,12 @@ async def get_day_forecast(symbol: str = "AAPL", horizon: str = "end_of_day"):
                     if dependencies.db_pool:
                         async with dependencies.db_pool.acquire() as conn:
                             result = await conn.fetchrow("""
-                                SELECT signal_type, confidence, reasoning, metadata, timestamp
-                                FROM agent_signals 
-                                WHERE agent_name = 'SentimentAgent' 
+                                SELECT signal_type, confidence, reasoning, metadata, created_at
+                                FROM agent_signals
+                                WHERE agent_name = 'SentimentAgent'
                                 AND symbol = $1
-                                AND timestamp >= NOW() - INTERVAL '2 hours'
-                                ORDER BY timestamp DESC 
+                                AND created_at >= NOW() - INTERVAL '2 hours'
+                                ORDER BY created_at DESC
                                 LIMIT 1
                             """, symbol)
                             
@@ -757,7 +757,7 @@ async def get_day_forecast(symbol: str = "AAPL", horizon: str = "end_of_day"):
                                     "confidence": float(result['confidence']),
                                     "reasoning": result['reasoning'],
                                     "metadata": metadata,
-                                    "timestamp": result['timestamp'].isoformat(),
+                                    "timestamp": result['created_at'].isoformat(),
                                     "source": "cached_database"
                                 }
                                 
@@ -1092,11 +1092,11 @@ async def _build_advanced_forecast_for_symbol(symbol: str, conn):
         
         # 1. Get predictions from all 10 individual agents
         agent_signals = await conn.fetch("""
-            SELECT agent_name, signal_type, confidence, reasoning, timestamp
+            SELECT agent_name, signal_type, confidence, reasoning, created_at
             FROM agent_signals
             WHERE symbol = $1
-            AND timestamp >= NOW() - INTERVAL '2 hours'
-            ORDER BY timestamp DESC
+            AND created_at >= NOW() - INTERVAL '2 hours'
+            ORDER BY created_at DESC
         """, symbol)
         
         # 2. Get ensemble signal (blended from all agents)

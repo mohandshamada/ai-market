@@ -26,7 +26,7 @@ from apscheduler.triggers.cron import CronTrigger
 from routes import health, agent_monitor, agent_router, execution_agent
 from routes import rag_event_agent, rl_strategy, meta_evaluation, latent_pattern
 from routes import ensemble_blender, predictions, symbols
-from routes import ticker_discovery, forecasting, risk_analysis, ab_testing
+from routes import ticker_discovery, forecasting, risk_analysis, ab_testing, reports
 from routes import dependencies
 from routes.utils import run_individual_agents, run_automated_ticker_discovery
 
@@ -323,6 +323,7 @@ app.include_router(ticker_discovery.router, tags=["Ticker Discovery"])
 app.include_router(forecasting.router, tags=["Forecasting"])
 app.include_router(risk_analysis.router, tags=["Risk Analysis"])
 app.include_router(ab_testing.router, tags=["A/B Testing"])
+app.include_router(reports.router, tags=["Reports"])
 
 logger.info("✅ All route modules registered")
 

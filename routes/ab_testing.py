@@ -33,13 +33,13 @@ async def get_ab_testing_summary():
                 
                 # Get agent performance data for strategy comparison
                 agent_performance = await conn.fetch("""
-                    SELECT 
+                    SELECT
                         agent_name,
                         COUNT(*) as total_predictions,
                         AVG(confidence) as avg_confidence,
                         COUNT(CASE WHEN signal_type IN ('buy', 'sell') THEN 1 END) as successful_predictions
-                    FROM agent_signals 
-                    WHERE timestamp >= NOW() - INTERVAL '30 days'
+                    FROM agent_signals
+                    WHERE created_at >= NOW() - INTERVAL '30 days'
                     GROUP BY agent_name
                 """)
                 
@@ -115,15 +115,15 @@ async def get_ab_testing_performance():
             async with dependencies.db_pool.acquire() as conn:
                 # Get real experiments from agent performance
                 experiments = await conn.fetch("""
-                    SELECT 
+                    SELECT
                         agent_name as experiment_name,
                         COUNT(*) as total_predictions,
                         AVG(confidence) as avg_confidence,
                         COUNT(CASE WHEN signal_type IN ('buy', 'sell') THEN 1 END) as successful_predictions,
-                        MIN(timestamp) as start_date,
-                        MAX(timestamp) as end_date
-                    FROM agent_signals 
-                    WHERE timestamp >= NOW() - INTERVAL '30 days'
+                        MIN(created_at) as start_date,
+                        MAX(created_at) as end_date
+                    FROM agent_signals
+                    WHERE created_at >= NOW() - INTERVAL '30 days'
                     GROUP BY agent_name
                     HAVING COUNT(*) >= 5
                 """)
@@ -350,16 +350,16 @@ async def get_ab_testing_experiments():
             async with dependencies.db_pool.acquire() as conn:
                 # Get detailed experiment data
                 experiments = await conn.fetch("""
-                    SELECT 
+                    SELECT
                         agent_name as experiment_name,
                         'Agent Strategy' as experiment_type,
                         COUNT(*) as total_predictions,
                         AVG(confidence) as avg_confidence,
                         COUNT(CASE WHEN signal_type IN ('buy', 'sell') THEN 1 END) as successful_predictions,
-                        MIN(timestamp) as start_date,
-                        MAX(timestamp) as end_date
-                    FROM agent_signals 
-                    WHERE timestamp >= NOW() - INTERVAL '30 days'
+                        MIN(created_at) as start_date,
+                        MAX(created_at) as end_date
+                    FROM agent_signals
+                    WHERE created_at >= NOW() - INTERVAL '30 days'
                     GROUP BY agent_name
                     HAVING COUNT(*) >= 5
                     ORDER BY successful_predictions DESC
@@ -402,18 +402,18 @@ async def get_ab_testing_active():
             async with dependencies.db_pool.acquire() as conn:
                 # Get recent active experiments
                 active_experiments = await conn.fetch("""
-                    SELECT 
+                    SELECT
                         agent_name as experiment_name,
                         COUNT(*) as total_predictions,
                         AVG(confidence) as avg_confidence,
                         COUNT(CASE WHEN signal_type IN ('buy', 'sell') THEN 1 END) as successful_predictions,
-                        MIN(timestamp) as start_date,
-                        MAX(timestamp) as end_date
-                    FROM agent_signals 
-                    WHERE timestamp >= NOW() - INTERVAL '7 days'
+                        MIN(created_at) as start_date,
+                        MAX(created_at) as end_date
+                    FROM agent_signals
+                    WHERE created_at >= NOW() - INTERVAL '7 days'
                     GROUP BY agent_name
                     HAVING COUNT(*) >= 3
-                    ORDER BY MAX(timestamp) DESC
+                    ORDER BY MAX(created_at) DESC
                 """)
                 
                 active_list = []

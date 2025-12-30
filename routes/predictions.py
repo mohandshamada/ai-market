@@ -25,15 +25,15 @@ async def get_predictions(limit: int = 50):
                 # Get individual agent predictions - sample from different agents
                 individual_predictions = await conn.fetch("""
                     WITH agent_samples AS (
-                        SELECT agent_name, symbol, signal_type, confidence, reasoning, metadata, timestamp,
-                               ROW_NUMBER() OVER (PARTITION BY agent_name ORDER BY timestamp DESC) as rn
-                        FROM agent_signals 
-                        WHERE timestamp >= NOW() - INTERVAL '1 hour'
+                        SELECT agent_name, symbol, signal_type, confidence, reasoning, metadata, created_at,
+                               ROW_NUMBER() OVER (PARTITION BY agent_name ORDER BY created_at DESC) as rn
+                        FROM agent_signals
+                        WHERE created_at >= NOW() - INTERVAL '1 hour'
                     )
-                    SELECT agent_name, symbol, signal_type, confidence, reasoning, metadata, timestamp
-                    FROM agent_samples 
+                    SELECT agent_name, symbol, signal_type, confidence, reasoning, metadata, created_at
+                    FROM agent_samples
                     WHERE rn <= 5
-                    ORDER BY timestamp DESC 
+                    ORDER BY created_at DESC
                     LIMIT $1
                 """, limit // 2)  # Half for individual agents
                 
@@ -56,7 +56,7 @@ async def get_predictions(limit: int = 50):
                         "signal_type": pred['signal_type'],
                         "confidence": float(pred['confidence']),
                         "asset_symbol": pred['symbol'],
-                        "timestamp": pred['timestamp'].isoformat(),
+                        "timestamp": pred['created_at'].isoformat(),
                         "reasoning": pred['reasoning'],
                         "metadata": {
                             "source": "individual_agent",

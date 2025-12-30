@@ -401,7 +401,7 @@ class RLDataCollector:
                 actions = await conn.fetch("""
                     SELECT expected_return, reward, created_at
                     FROM rl_actions
-                    WHERE created_at >= NOW() - INTERVAL '%s days'
+                    WHERE created_at >= NOW() - ($1 * interval '1 day')
                     ORDER BY created_at DESC
                 """, days)
             
@@ -596,3 +596,58 @@ class RLDataCollector:
         """Update market state (placeholder for future use)."""
         # This could be used to update market state tables
         pass
+
+    async def _fetch_market_data(self) -> Dict[str, Any]:
+        """Fetch real market data for RL training."""
+        try:
+            import yfinance as yf
+            import numpy as np
+
+            # Use a representative symbol
+            symbols = ['SPY', 'QQQ', 'IWM']
+            symbol = symbols[0]
+
+            ticker = yf.Ticker(symbol)
+            hist = ticker.history(period="30d", interval="1d")
+
+            if not hist.empty:
+                # Calculate technical indicators
+                returns = hist['Close'].pct_change().dropna()
+                volatility = float(returns.std() * np.sqrt(252))
+
+                # Determine market regime
+                recent_return = float(returns.tail(5).mean())
+                if recent_return > 0.01:
+                    regime = 'bull'
+                elif recent_return < -0.01:
+                    regime = 'bear'
+                else:
+                    regime = 'neutral'
+
+                return {
+                    'symbol': symbol,
+                    'price': float(hist['Close'].iloc[-1]),
+                    'volatility': volatility,
+                    'regime': regime,
+                    'volume': float(hist['Volume'].iloc[-1]),
+                    'returns': [float(r) for r in returns.tolist()[-20:]],
+                    'timestamp': datetime.now()
+                }
+            else:
+                return self._get_fallback_market_data()
+
+        except Exception as e:
+            logger.error(f"Error fetching market data: {e}")
+            return self._get_fallback_market_data()
+
+    def _get_fallback_market_data(self) -> Dict[str, Any]:
+        """Get fallback market data."""
+        return {
+            'symbol': 'SPY',
+            'price': 450.0,
+            'volatility': 0.02,
+            'regime': 'neutral',
+            'volume': 50000000,
+            'returns': [0.001, -0.002, 0.003, -0.001, 0.002],
+            'timestamp': datetime.now()
+        }

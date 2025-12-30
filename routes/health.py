@@ -89,25 +89,25 @@ async def system_status():
             
             # Get real agent data from database
             agent_stats = await conn.fetch("""
-                SELECT 
+                SELECT
                     agent_name,
                     COUNT(*) as total_predictions,
                     AVG(CASE WHEN signal_type = 'buy' OR signal_type = 'sell' THEN confidence ELSE 0 END) as avg_confidence,
                     COUNT(CASE WHEN signal_type = 'buy' OR signal_type = 'sell' THEN 1 END) as active_predictions
-                FROM agent_signals 
-                WHERE timestamp >= NOW() - INTERVAL '24 hours'
+                FROM agent_signals
+                WHERE created_at >= NOW() - INTERVAL '24 hours'
                 GROUP BY agent_name
                 ORDER BY total_predictions DESC
             """)
-            
+
             # Get total predictions and accuracy from database (check both tables)
             agent_stats_data = await conn.fetchrow("""
-                SELECT 
+                SELECT
                     COUNT(*) as total_predictions,
                     COUNT(CASE WHEN signal_type = 'buy' OR signal_type = 'sell' THEN 1 END) as successful_predictions,
                     AVG(confidence) as avg_accuracy
-                FROM agent_signals 
-                WHERE timestamp >= NOW() - INTERVAL '24 hours'
+                FROM agent_signals
+                WHERE created_at >= NOW() - INTERVAL '24 hours'
             """)
             
             ensemble_stats_data = await conn.fetchrow("""

@@ -48,6 +48,7 @@ class TrainingConfig:
     epsilon_start: float = 1.0
     epsilon_end: float = 0.01
     epsilon_decay: float = 0.995
+    batch_size: int = 64
 
 class RLTrainingService:
     """
@@ -113,7 +114,7 @@ class RLTrainingService:
                 
                 if latest_metrics:
                     self.current_episode = latest_metrics['episodes_trained']
-                    self.epsilon = latest_metrics['exploration_rate']
+                    self.epsilon = float(latest_metrics['exploration_rate'])
                     logger.info(f"Loaded existing model from episode {self.current_episode}")
                 else:
                     self.current_episode = 0

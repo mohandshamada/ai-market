@@ -1203,21 +1203,21 @@ class EnsembleBlenderService:
             async with self.db_pool.acquire() as conn:
                 # Pull signals from agent_signals table (populated by IndividualAgentService)
                 signals = await conn.fetch("""
-                    SELECT * FROM agent_signals 
-                    WHERE timestamp >= NOW() - INTERVAL '1 hour'
-                    ORDER BY timestamp DESC 
+                    SELECT * FROM agent_signals
+                    WHERE created_at >= NOW() - INTERVAL '1 hour'
+                    ORDER BY created_at DESC
                     LIMIT $1
                 """, limit)
-                
+
                 return [
                     {
-                        'signal_id': f"{s['agent_name']}_{s['symbol']}_{s['timestamp'].isoformat()}",
+                        'signal_id': f"{s['agent_name']}_{s['symbol']}_{s['created_at'].isoformat()}",
                         'agent_name': s['agent_name'],
                         'symbol': s['symbol'],
                         'signal_type': s['signal_type'],
                         'confidence': float(s['confidence']),
                         'regime': 'neutral',  # Will be updated based on market regime detection
-                        'created_at': s['timestamp']
+                        'created_at': s['created_at']
                     } for s in signals
                 ]
                 
